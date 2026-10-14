@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<title>Тетрадь — рукописные страницы</title>
+<style>
+:root{--bg:#0d1422;--panel:#151f30;--panel2:#1c2940;--text:#f4f7fb;--muted:#a9b6c9;--accent:#72a7ff;--line:#d8e2f1}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{padding:24px 18px 16px;max-width:1100px;margin:auto}h1{font-size:25px;margin:0 0 5px}header p{margin:0;color:var(--muted);font-size:14px}
+main{max-width:1100px;margin:auto;padding:0 14px 32px;display:grid;grid-template-columns:minmax(280px,390px) minmax(0,1fr);gap:16px}
+.panel{background:var(--panel);border:1px solid #2a3850;border-radius:18px;padding:16px;min-width:0}
+label,.label{display:block;font-weight:650;font-size:14px;margin:13px 0 7px}
+textarea,select,input[type="text"]{width:100%;border:1px solid #34445f;background:#0e1726;color:var(--text);border-radius:11px;padding:12px;font:inherit}
+textarea{min-height:155px;resize:vertical}select{min-height:44px}
+input[type="range"]{width:100%;accent-color:var(--accent)}
+.small{font-size:12px;color:var(--muted)}.rangehead{display:flex;justify-content:space-between;gap:8px}.rangehead output{color:#c7dcff;font-variant-numeric:tabular-nums}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{border:0;border-radius:12px;padding:13px 15px;font-weight:750;font-size:15px;cursor:pointer}
+.primary{background:#79aaff;color:#071426;width:100%;margin-top:15px}.secondary{background:var(--panel2);color:var(--text);border:1px solid #34445f;width:100%;margin-top:9px}
+.upload{display:block;border:1px dashed #536986;border-radius:12px;padding:12px;color:#d8e5f7;background:#101a2a;font-size:13px}
+.upload input{display:block;width:100%;margin-top:8px;font-size:12px}
+.sample{width:100%;max-height:180px;object-fit:contain;background:#fff;border-radius:8px;margin-top:9px;display:none}
+.preview-wrap{background:#0a101b;border-radius:14px;padding:12px;overflow:auto;text-align:center;min-height:300px}
+canvas{display:block;width:100%;height:auto;max-width:680px;margin:auto;background:white;border-radius:3px;box-shadow:0 8px 25px #0005}
+.note{margin-top:12px;font-size:12px;color:var(--muted)}
+.status{font-size:12px;color:#a8c7ff;margin-top:8px;min-height:18px}
+@media(max-width:800px){main{grid-template-columns:1fr}header{padding-top:18px}.preview-wrap{min-height:180px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>✍️ Тетрадь</h1>
+  <p>Превращай текст в изображение страницы с рукописным оформлением.</p>
+</header>
+<main>
+<section class="panel">
+  <label for="source">Текст преподавателя</label>
+  <textarea id="source" placeholder="Вставь сюда текст...">Тема: Основы электротехники
+
+Электрический ток — это упорядоченное движение заряженных частиц. Сила тока измеряется в амперах, напряжение — в вольтах, а сопротивление — в омах.</textarea>
+  <div class="row">
+    <div><label for="paper">Тип страницы</label><select id="paper"><option value="grid">В клетку</option><option value="lines">В линейку</option><option value="plain">Белый лист</option></select></div>
+    <div><label for="ink">Цвет чернил</label><select id="ink"><option value="#214f9a">Синяя ручка</option><option value="#20242b">Чёрная ручка</option><option value="#a52e36">Красная ручка</option></select></div>
+  </div>
+  <label for="font">Вариант почерка</label>
+  <select id="font">
+    <option value="cursive">Рукописный</option><option value="serif">Учебный, с засечками</option><option value="sans">Простой печатный</option>
+  </select>
+  <div class="rangehead"><label for="size">Размер букв</label><output id="sizeVal">22 px</output></div><input id="size" type="range" min="14" max="32" value="22">
+  <div class="rangehead"><label for="spacing">Расстояние между строками</label><output id="spacingVal">1.7×</output></div><input id="spacing" type="range" min="12" max="24" value="17">
+  <div class="rangehead"><label for="slant">Наклон букв</label><output id="slantVal">5°</output></div><input id="slant" type="range" min="-8" max="12" value="5">
+  <div class="rangehead"><label for="variation">Неровность строки</label><output id="variationVal">2</output></div><input id="variation" type="range" min="0" max="5" value="2">
+  <label>Образец собственного почерка (необязательно)</label>
+  <div class="upload">Загрузи фото своей рукописи — оно сохранится как визуальный образец для дальнейшей настройки.
+    <input id="sampleInput" type="file" accept="image/*">
+    <img id="sample" class="sample" alt="Образец почерка">
+  </div>
+  <button class="primary" id="render">Обновить страницу</button>
+  <button class="secondary" id="download">Сохранить изображение PNG</button>
+  <div class="status" id="status" role="status"></div>
+  <p class="note">Важно: загрузка фото пока служит образцом и не копирует почерк автоматически. Для настоящего воспроизведения индивидуального почерка потребуется подключить отдельную модель генерации рукописного текста.</p>
+</section>
+<section class="panel">
+  <div class="label">Предварительный просмотр</div>
+  <div class="preview-wrap"><canvas id="page" width="900" height="1200" aria-label="Предпросмотр страницы тетради"></canvas></div>
+  <p class="note">Сохраняется только сама страница — без элементов интерфейса. На телефоне можно добавить сайт на экран «Домой».</p>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const canvas=$('page'),ctx=canvas.getContext('2d');
+const fields=['source','paper','ink','font','size','spacing','slant','variation'];
+function draw(){
+  const W=canvas.width,H=canvas.height;
+  const size=+$('size').value, gap=size*(+$('spacing').value/10), slant=+$('slant').value, variation=+$('variation').value;
+  $('sizeVal').textContent=size+' px';$('spacingVal').textContent=(+$('spacing').value/10).toFixed(1)+'×';$('slantVal').textContent=slant+'°';$('variationVal').textContent=variation;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle='#fffefa';ctx.fillRect(0,0,W,H);
+  const left=92,right=W-54,top=74,bottom=H-65;
+  ctx.lineWidth=1;
+  if($('paper').value==='grid'){
+    ctx.strokeStyle='#d7e4f3';
+    for(let x=left-28;x<right;x+=28){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+    for(let y=top-24;y<bottom;y+=28){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+    ctx.strokeStyle='#e7a9b4';ctx.beginPath();ctx.moveTo(left-20,0);ctx.lineTo(left-20,H);ctx.stroke();
+  }else if($('paper').value==='lines'){
+    ctx.strokeStyle='#b8d0ed';for(let y=top;y<bottom;y+=Math.max(30,gap+9)){ctx.beginPath();ctx.moveTo(35,y);ctx.lineTo(W-35,y);ctx.stroke()}
+    ctx.strokeStyle='#e7a9b4';ctx.beginPath();ctx.moveTo(left-22,0);ctx.lineTo(left-22,H);ctx.stroke();
+  }
+  const text=$('source').value||'Вставь текст в поле слева.';
+  const font=$('font').value==='cursive'?'italic '+size+'px "Comic Sans MS","Segoe Print",cursive':$('font').value==='serif'?size+'px Georgia,serif':size+'px Arial,sans-serif';
+  ctx.fillStyle=$('ink').value;ctx.textBaseline='alphabetic';ctx.font=font;
+  const maxWidth=right-left;let y=top+size;let lineNo=0;
+  const paragraphs=text.split(/\n/);
+  for(let p=0;p<paragraphs.length;p++){
+    const words=paragraphs[p].split(/\s+/).filter(Boolean);
+    if(!words.length){y+=gap;continue}
+    let line='';
+    for(const word of words){
+      const test=line?line+' '+word:word;
+      if(ctx.measureText(test).width>maxWidth && line){
+        drawLine(line,left,y,lineNo++,size,slant,variation);y+=gap;line=word;
+        if(y>bottom-size)break;
+      }else line=test;
+    }
+    if(y<=bottom) {drawLine(line,left,y,lineNo++,size,slant,variation);y+=gap+size*.22}
+    if(y>bottom-size)break;
+  }
+  if(y>bottom-size){
+    ctx.save();ctx.fillStyle='#8b4b4b';ctx.font='18px Arial';ctx.fillText('Текст не помещается на одной странице — сократи его или уменьши размер букв.',left,bottom+28);ctx.restore();
+  }
+}
+function drawLine(line,x,y,index,size,slant,variation){
+  ctx.save();const wiggle=variation?Math.sin(index*2.17)*variation:0;
+  ctx.translate(x,y+wiggle);ctx.transform(1,0,Math.tan(slant*Math.PI/180),1,0,0);
+  ctx.fillText(line,0,0);ctx.restore();
+}
+fields.forEach(id=>$(id).addEventListener('input',draw));
+$('render').addEventListener('click',()=>{draw();$('status').textContent='Предпросмотр обновлён.'});
+$('download').addEventListener('click',()=>{
+  draw();const a=document.createElement('a');a.download='тетрадная-страница.png';a.href=canvas.toDataURL('image/png');a.click();$('status').textContent='Изображение подготовлено для сохранения.';
+});
+$('sampleInput').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  const img=$('sample');img.src=URL.createObjectURL(f);img.style.display='block';
+  $('status').textContent='Образец загружен. Автоматическое копирование почерка появится после подключения модели.';
+});
+draw();
+</script>
+</body>
+</html>
